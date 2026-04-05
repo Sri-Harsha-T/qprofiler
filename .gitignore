@@ -1,0 +1,4 @@
+build/
+*.o *.a *.so *.dylib
+*.pyc __pycache__/
+reports/*.png reports/*.pdf
