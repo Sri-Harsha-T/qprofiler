@@ -111,4 +111,34 @@ namespace qprofiler {
         }
     }
 
+    // Random circuit generator with multiple layers of Hadarmard and entangling CNOT pairs along with random phase rotations
+    std::size_t apply_random_circuit(StateVec& state, int n_qubits, int depth, unsigned seed) {
+        std::mt19937 rng(seed); // rng generator
+        std::uniform_int_distribution<> qubit_dist(0, n_qubits-1);
+        std::uniform_real_distribution<> angle_dist(0.0, 2.0 * M_PI); // for phase rotations
+        
+        std::size_t gate_count = 0;
+
+        for (int layer = 0; layer < depth; ++layer) {
+            // Single qubit Hadamard pass
+            for (int q = 0; q < n_qubits; ++q) {
+                apply_hadamard(state, n_qubits, q);
+                ++gate_count;
+            }
+
+            // CNOT pairs (Entangling qubits here)
+            for (int q = 0; q < n_qubits - 1; q+=2){
+                apply_cnot(state, n_qubits, q, q+1);
+                ++gate_count;
+            }
+
+            // Random phase rotations
+            for (int q = 0; q < n_qubits; ++q) {
+                apply_phase(state, n_qubits, q, angle_dist(rng));
+                ++gate_count;
+            }
+        }
+        return gate_count;
+    }
+
 } // namespace qprofiler

@@ -29,4 +29,8 @@ namespace qprofiler {
     // Apply a single qubit phase gate with angle theta (diag(1, e^{i*theta})) to `target` qubit
     void apply_phase(StateVec& state, int n_qubits, int target, double theta); 
 
+    // Create a random_circuit of `depth` layers, each consisting of Hadamard + CNOT entangling gates across all qubits
+    // Returns total number of gate operations applied
+    std::size_t apply_random_circuit(StateVec& state, int n_qubits, int depth, unsigned seed = 42);
+
 } // namespace qprofiler
