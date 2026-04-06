@@ -37,13 +37,78 @@ namespace qprofiler {
         #ifdef _OPENMP
         #pragma omp parallel for schedule(static)
         #endif
-            for (std::size_t i = 0; i < N; i++) {
-                if (i&m) continue; // process only the "lower" of each pair since any i > m will have i&m > 0
-                complex_t a = state[i];
-                complex_t b = state[i | m];
-                state[i] = inv2 * (a + b);
-                state[i|m] = inv2 * (a - b);
+        for (std::size_t i = 0; i < N; i++) {
+            if (i&m) continue; // process only the "lower" of each pair since any i > m will have i&m > 0
+            complex_t a = state[i];
+            complex_t b = state[i | m];
+            state[i] = inv2 * (a + b);
+            state[i|m] = inv2 * (a - b);
+        }
+    }
+
+    // Pauli X 
+    // X |0> = |1> and vice versa
+    void apply_pauli_x(StateVec& state, int n_qubits, int target) {
+        const std::size_t N = dim(n_qubits);
+        const std::size_t m = mask(target);
+
+        #ifdef _OPENMP
+        #pragma omp parallel for schedule(static)
+        #endif
+        for (std::size_t i = 0; i < N; ++i) {
+            if (i&m) continue;
+            std::swap(state[i], state[i|m]); // swaps a|0> + b|1> to a|1> + b|0>
+        }
+    }
+
+    // Pauli Z
+    // Z |0> = |0> but Z|1> = -|1> 
+    void apply_pauli_z(StateVec& state, int n_qubits, int target) {
+        const std::size_t N = dim(n_qubits);
+        const std::size_t m = mask(target);
+
+        #ifdef _OPENMP
+        #pragma omp parallel for schedule(static)
+        #endif
+        for (std::size_t i = 0; i < N; ++i){
+            if (i&m) state[i] = -state[i]; // inverting the phase about the z-axis
+        }
+    }
+
+    // CNOT
+    // CNOT |ctrl=1, tgt=0> = |ctrl=1, tgt=1> and vice-versa
+    void apply_cnot(StateVec& state, int n_qubits, int ctrl, int tgt) {
+        // ensure that control and target qubtis are not the same
+        if(ctrl==tgt){
+            throw std::invalid_argument("CNOT: control and target must differ");
+        }
+
+        const std::size_t N = dim(n_qubits);
+        const std::size_t mc = mask(ctrl);
+        const std::size_t mt = mask(tgt);
+
+        #ifdef _OPENMP
+        #pragma omp parallel for schedule(static)
+        #endif
+        for (std::size_t i = 0; i < N; ++i){
+            if ((i&mc) && !(i&mt)){ // acts only when control qubit is |1>
+                std::swap(state[i], state[i|mt]);
             }
+        }
+    }
+
+    // Phase gate : diag(1, e^{i*theta})
+    void apply_phase(StateVec& state, int n_qubits, int target, double theta) {
+        const std::size_t N = dim(n_qubits);
+        const std::size_t m = mask(target);
+        const complex_t ph = std::exp(complex_t(0.0, theta));
+
+        #ifdef _OPENMP
+        #pragma omp parallel for schedule(static)
+        #endif
+        for (std::size_t i = 0; i < N; ++i) {
+            if (i&m) state[i] *= ph; // multiply |1> amplitudes with e^(i*theta)
+        }
     }
 
 } // namespace qprofiler
