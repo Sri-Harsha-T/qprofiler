@@ -5,4 +5,5 @@ build/
 *.dylib
 *.pyc 
 __pycache__/
-reports/*.png reports/*.pdf
+reports/*.png 
+reports/*.pdf

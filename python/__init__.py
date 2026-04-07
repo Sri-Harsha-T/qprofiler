@@ -25,6 +25,7 @@ except:
     )
 
 from .benchmark import run_sweep, profile_gate_sequence
+from .visualize import generate_report
 
 __all__ = [
     "Simulator",
@@ -33,4 +34,5 @@ __all__ = [
     "openmp_enabled",
     "run_sweep",
     "profile_gate_sequence",
+    "generate_report",
 ]

@@ -47,7 +47,7 @@ class GateRecord:
     label : str
     wall_ms: float
     cpu_ms: float
-    peak_rss_mb: int
+    peak_rss_kb: int
     n_qubits: int
     state_dim: int
     gate_count: int
