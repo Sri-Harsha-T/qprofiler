@@ -33,6 +33,11 @@ endif()
 
 # Python + Pybind11
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+execute_process(
+    COMMAND ${Python3_EXECUTABLE} -m pybind11 --cmakedir
+    OUTPUT_VARIABLE pybind11_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 find_package(pybind11 REQUIRED)
 
 message(STATUS "Python: ${Python3_EXECUTABLE}")
