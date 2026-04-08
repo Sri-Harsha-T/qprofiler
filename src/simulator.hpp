@@ -1,6 +1,7 @@
 #pragma once
 #include "gates.hpp"
 #include "profiler.hpp"
+#include "kernel_registry.hpp"
 #include <string>
 #include <vector>
 
@@ -34,6 +35,23 @@ namespace qprofiler {
             void cnot(int ctrl, int tgt);
             void phase(int target, double theta);
 
+            // Plugin / callable kernel API
+
+            // Register a KernelFn under `name` in the global KernelRegistry
+            // Once registered, the kernel can be invoked via apply_gate()
+            static void register_kernel(const std::string& name, KernelFn fn);
+
+            // Apply any registered kernel by name(built-in/user provided)
+            // Wraps the call in ScopedTimer, profiled identically to built-ins
+            /// @param name Kernel name (must be in KernelRegistry)
+            /// @param targets Qubit indices the gate acts on
+            /// @param params Rotation angles/phases (empty for Clifford gates)
+            void apply_gate(const std::string& name, const std::vector<int>& targets, const std::vector<double>& params = {}); 
+
+            // List all registered kernel names (built-in + user provided)
+            static std::vector<std::string> list_kernels();
+
+            // Circuit level benchmarking
             // Run a full random circuit and return the BenchmarkResult for it
             BenchmarkResult run_circuit(int depth, unsigned seed = 42);
 

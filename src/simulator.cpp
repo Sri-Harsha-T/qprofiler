@@ -29,6 +29,30 @@ namespace qprofiler {
         }
     }
 
+    // Plugin kernel API
+
+    void Simulator::register_kernel(const std::string& name, KernelFn fn) {
+        KernelRegistry::instance().register_kernel(name, std::move(fn));
+    }
+
+    void Simulator::apply_gate(const std::string& name, const std::vector<int>& targets, const std::vector<double>& params) {
+        // Validate all target qubits
+        for (int q: targets) check_qubit(q, "apply_gate[" + name + "]");
+
+        const KernelFn& fn = KernelRegistry::instance().get(name);
+        GateArgs args{targets, params};
+
+        // ScopedTimer wraps the kernel call, identical to built-in gates
+        ScopedTimer t(name, n_qubits_, static_cast<std::size_t>(targets.size()), prof_.mutable_records());
+        fn(state_, n_qubits_, args);
+    }
+
+    std::vector<std::string> Simulator::list_kernels() {
+        return KernelRegistry::instance().list_kernels();
+    }
+    
+    // Built-in gate wrappers
+
     void Simulator::hadamard(int target) {
         check_qubit(target, "hadamard");
         ScopedTimer t("hadamard", n_qubits_, 1, prof_.mutable_records());
