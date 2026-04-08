@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import List
 
 try:
-    import qprofiler_core as _core
+    import qprofiler.qprofiler_core as _core
     _CPP_OK = True
 except ImportError:
     _CPP_OK = False

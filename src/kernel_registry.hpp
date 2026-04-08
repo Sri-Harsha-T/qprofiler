@@ -3,6 +3,7 @@
 #include <functional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <stdexcept>
 
@@ -43,10 +44,16 @@ namespace qprofiler {
             // Remove all registrations 
             void clear();
 
+            // Remove only the entries that were registered after construction
+            // i.e. Python-callable kernels, leaving the builtin C++ kernels intact.
+            // Safe to call at any time during normal execution
+            void clear_python_kernels();
+
         private:
             KernelRegistry(); // seeds built-in kernels
 
             std::unordered_map<std::string, KernelFn> table_;
+            std::unordered_set<std::string> builtins_; // names seeded in constructor
     };
 
 } // namespace qprofiler

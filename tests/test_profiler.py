@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "python"))
 
 # Import C++ library
 try:
-    import qprofiler_core as qc
+    import qprofiler.qprofiler_core as qc
     CPP_AVAILABLE = True
 except ImportError:
     CPP_AVAILABLE = False

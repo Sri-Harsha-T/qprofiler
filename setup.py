@@ -10,6 +10,7 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build -j$(nproc)
 """
 
+import os
 import sys
 import subprocess
 from pathlib import Path
@@ -29,12 +30,12 @@ class CMakeBuild(build_ext):
         build_dir = cwd / "build"
         build_dir.mkdir(exist_ok=True)
         cmake_args = [
-            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={cwd / 'python'}",
-            f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DPython3_EXECUTABLE={sys.executable}",
             "-DCMAKE_BUILD_TYPE=Release",
         ]
 
-        build_args = ["--build", ".", "--target", "qprofiler_core", "-j4"]
+        build_args = ["--build", str(build_dir), "--target", "qprofiler_core",
+                      f"-j{os.cpu_count() or 4}"]
 
         subprocess.run(
             ["cmake", str(cwd)] + cmake_args,
@@ -58,7 +59,7 @@ setup(
     extras_require        = {
         "dev": ["pytest>=7.0", "line-profiler"],
     },
-    ext_modules           = [Extension("qprofiler_core", sources=[])],
+    ext_modules           = [Extension("qprofiler.qprofiler_core", sources=[])],
     cmdclass              = {"build_ext": CMakeBuild},
     zip_safe              = False,
     classifiers           = [

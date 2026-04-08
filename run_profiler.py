@@ -31,7 +31,7 @@ def main():
 
     # Import C++ Pybind generated library
     try:
-        import qprofiler_core as _core
+        import qprofiler.qprofiler_core as _core
         print(f"C++ extension loaded (OPENMP: {_core.openmp_enabled})")
         print(f"Curent RSS: {_core.current_rss_kb()} kB\n")
     except ImportError:

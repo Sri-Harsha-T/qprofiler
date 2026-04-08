@@ -82,6 +82,11 @@ namespace qprofiler {
             apply_phase(s, n, a.targets[0], M_PI/4.0);
         };
         table_["T"] = table_["t"];
+
+        // Record every name seeded in this constructor as a builtin
+        // clear_python_kernels() will preserve these and only erase the rest.
+        for (const auto& kv: table_)
+            builtins_.insert(kv.first);
     }
 
     // API
@@ -111,6 +116,18 @@ namespace qprofiler {
 
     void KernelRegistry::clear() {
         table_.clear();
+    }
+
+    void KernelRegistry::clear_python_kernels() {
+        // Erase every entry that is NOT a built-in
+        // This drops all captured py::object references while the interpreter
+        // is still alive, preventing segfault on shutdown
+        for (auto it = table_.begin(); it != table_.end(); ) {
+            if (builtins_.count(it->first) == 0)
+                it = table_.erase(it);
+            else
+                ++it;
+        }
     }
 
 } // namespace qprofiler

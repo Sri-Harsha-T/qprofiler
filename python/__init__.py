@@ -4,7 +4,7 @@ qprofiler : Quantum Circuit Performance Profiler
 A hybrid C++/Python benchmarking toolkit for state-vector quantum simulations
 
 Modules :
-qprofiler_core : compiled C++ extension (Pybind11)
+qprofiler.qprofiler_core : compiled C++ extension (Pybind11)
 
 Quick Start :
 >>> from qprofiler import run_sweep
@@ -12,13 +12,13 @@ Quick Start :
 """
 
 try:
-    from .qprofiler_core import Simulator, current_rss_kb, peak_rss_kb, openmp_enabled
+    from .qprofiler.qprofiler_core import Simulator, current_rss_kb, peak_rss_kb, openmp_enabled
     _CPP_AVAILABLE = True
 except:
     _CPP_AVAILABLE = False
     import warnings
     warnings.warn(
-        "qprofiler_core C++ extension not found."
+        "qprofiler.qprofiler_core C++ extension not found."
         "Run: cmake -B build && cmake --build build",
         ImportWarning,
         stacklevel=2

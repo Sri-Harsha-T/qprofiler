@@ -73,6 +73,12 @@ PYBIND11_MODULE(qprofiler_core, m) {
         >>> print(result["wall_ms"])
     )doc";
 
+    py::module_::import("atexit").attr("register")(
+        py::cpp_function([](){
+            KernelRegistry::instance().clear_python_kernels();
+        })
+    );
+
     m.def("register_kernel",
         [](const std::string& name, py::object callable) {
             if (!PyCallable_Check(callable.ptr())) // check if it is a callable, py::callable doesn't work
@@ -93,6 +99,12 @@ PYBIND11_MODULE(qprofiler_core, m) {
             return KernelRegistry::instance().has_kernel(name);
         },
         py::arg("name"));
+
+    m.def("clear_python_kernels",
+        []() {KernelRegistry::instance().clear_python_kernels();},
+        "Remove all Python-registered kernels, keeping built-in C++ gates.\n"
+        "Called automatically at interpreter shutdown to prevent segfaults\n"
+        "from py::object refcount decrements after Py_Finalize().");
 
     // Simulator
     py::class_<Simulator>(m, "Simulator", R"doc(

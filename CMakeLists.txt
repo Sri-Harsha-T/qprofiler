@@ -50,6 +50,7 @@ add_library(qprofiler_lib STATIC
     src/gates.cpp
     src/profiler.cpp
     src/simulator.cpp
+    src/kernel_registry.cpp
 )
 set_target_properties(qprofiler_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_include_directories(qprofiler_lib PUBLIC src)
@@ -64,7 +65,7 @@ target_link_libraries(qprofiler_core PRIVATE qprofiler_lib)
 
 # Put .so in python/ so that `import qprofiler_core` can work directly
 set_target_properties(qprofiler_core PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/python"
+    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/python/qprofiler"
 )
 
 # Standalone benchmark binary
