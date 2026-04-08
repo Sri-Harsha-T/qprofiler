@@ -38,7 +38,8 @@ execute_process(
     OUTPUT_VARIABLE pybind11_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-find_package(pybind11 REQUIRED)
+
+find_package(pybind11 REQUIRED PATHS ${pybind11_DIR} NO_DEFAULT_PATH)
 
 message(STATUS "Python: ${Python3_EXECUTABLE}")
 message(STATUS "pybind11: ${pybind11_VERSION}")

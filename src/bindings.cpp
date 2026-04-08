@@ -1,9 +1,12 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/complex.h>
+#include <pybind11/numpy.h>
+#include <pybind11/functional.h>
 
 #include "simulator.hpp"
 #include "profiler.hpp"
+#include "kernel_registry.hpp"
 
 namespace py = pybind11;
 using namespace qprofiler;
@@ -35,8 +38,26 @@ static py::dict bench_to_dict(const BenchmarkResult& b) {
     return d;
 }
 
+// Build a C++ KernelFn that calls back into Python with a zero-cpoy state view
+// Will use GIL (mutex) for mimickning Meyer's singleton
+static KernelFn make_python_kernel(py::object py_callable) {
+    return [py_callable](StateVec& state, int n_qubits, const GateArgs& args) {
+        py::gil_scoped_acquire gil;
+
+        // Zero copy numpy view: C++ owns the memory, numpy must not free it
+        py::array_t<std::complex<double>> state_view(
+            { static_cast<py::ssize_t>(state.size())},
+            {static_cast<py::ssize_t>(sizeof(complex_t))},
+            state.data(),
+            py::capsule(state.data(), [](void*) {})
+        );
+        py_callable(state_view, n_qubits, args.targets, args.params);
+    };
+}
+
 PYBIND11_MODULE(qprofiler_core, m) {
     m.doc() = R"doc(
+        qprofiler_core: quantum gate kernel profiler with Python callable support.
         qprofiler_core
         ==============
         C++ quantum gate-kernel benchmark library exposed to Python via Pybind11.
@@ -52,6 +73,27 @@ PYBIND11_MODULE(qprofiler_core, m) {
         >>> print(result["wall_ms"])
     )doc";
 
+    m.def("register_kernel",
+        [](const std::string& name, py::object callable) {
+            if (!PyCallable_Check(callable.ptr())) // check if it is a callable, py::callable doesn't work
+                throw py::type_error("register_kernel: second argument must be callable");
+            Simulator::register_kernel(name, make_python_kernel(callable));
+        },
+        py::arg("name"), py::arg("callable"),
+        "Register a Python callable as a named, profiled gate kernel.\n\n"
+        "Signature: fn(state: np.ndarray, n_qubits: int, targets: list[int], params: list[float]) -> None\n"
+        "The state array is a zero-copy view, mutate it in-place.");
+
+    m.def("list_kernels",
+        []() {return Simulator::list_kernels();},
+        "Return sorted list of all registered kernel names.");
+
+    m.def("has_kernel",
+        [](const std::string& name) {
+            return KernelRegistry::instance().has_kernel(name);
+        },
+        py::arg("name"));
+
     // Simulator
     py::class_<Simulator>(m, "Simulator", R"doc(
         State-vector quantum circuit simulator.
@@ -61,14 +103,20 @@ PYBIND11_MODULE(qprofiler_core, m) {
         n_qubits : int
             Number of qubits (1-30).  State vector size is 2^n_qubits complex128.
     )doc")
-        .def(py::init<int>(), py::arg("n_qu bits"))
+        .def(py::init<int>(), py::arg("n_qubits"))
         .def("reset_state", &Simulator::reset_state, "Reset state vector to |0...0>.")
         .def("hadamard", &Simulator::hadamard, py::arg("target"), "Apply Hadamard gate to qubit `target`")
         .def("pauli_x",  &Simulator::pauli_x,  py::arg("target"))
         .def("pauli_z",  &Simulator::pauli_z,  py::arg("target"))
         .def("cnot",     &Simulator::cnot,     py::arg("ctrl"), py::arg("tgt"))
         .def("phase",    &Simulator::phase,    py::arg("target"), py::arg("theta"))
-
+        .def("apply_gate",
+            [](Simulator& self, const std::string& name, const std::vector<int>& targets,
+                const std::vector<double>& params) {
+                self.apply_gate(name, targets, params);
+            },
+            py::arg("name"), py::arg("targets"), py::arg("params") = std::vector<double>{},
+            "Apply a registered kernel by name. Profiled via ScopedTimer.")
         .def("run_circuit",
              [](Simulator& self, int depth, unsigned seed) -> py::dict {
                  return bench_to_dict(self.run_circuit(depth, seed));
